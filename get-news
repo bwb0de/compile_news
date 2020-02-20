@@ -28,7 +28,8 @@
 Programa para coleta de notícias do site BBC Brasil
 
 Usage:
-    get-news
+    get-news bbc
+    get-news folha
 
 Options:
     --version
@@ -39,7 +40,7 @@ import os
 
 from docopt import docopt
 
-from modules.web_scraping_base import get_bbc_news, bbc_br
+from modules.web_scraping_base import get_bbc_news, bbc_br, get_folha_news
 from modules.news_pastas_de_dados import pasta_dados
 
 args = docopt(__doc__)
@@ -49,10 +50,18 @@ def minimal_info_check():
 
 def main():
     minimal_info_check()
-    newid = os.fork()
-    if newid == 0:
-        print('Buscando informações em segundo plano...')
-        get_bbc_news(bbc_br, target_folder=pasta_dados)
+    if args['bbc']:
+        newid = os.fork()
+        if newid == 0:
+            print('Buscando informações em BBC Brasil...')
+            get_bbc_news(target_folder=pasta_dados)
+    
+    elif args['folha']:
+        #newid = os.fork()
+        #if newid == 0:
+        #    print('Buscando informações no site da Folha de São Paulo...')
+        get_folha_news(target_folder=pasta_dados)
+
 
 
 if __name__ == '__main__':
