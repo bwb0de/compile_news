@@ -4,8 +4,9 @@
 
 import os
 
-pasta_raiz = os.getcwd() + '/'
+pasta_raiz = os.getcwd() + os.sep
 
 pasta_dados = 'data/'
+pasta_modulos = pasta_raiz + 'modulos/'
 
 

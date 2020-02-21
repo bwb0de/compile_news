@@ -1,5 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
 
-
+import time
+import requests
 import urllib3
 import itertools
 import codecs
@@ -8,22 +12,25 @@ import time
 import re
 
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
+
+from modules.news_pastas_de_dados import pasta_modulos
 
 bbc_br = 'https://www.bbc.com/portuguese'
-pdt_search='http://www.portaltransparencia.gov.br/busca?termo=72666986187'
 folha = 'https://www.folha.uol.com.br'
+br_de_fato = 'https://www.brasildefato.com.br/politica'
+
 
 def get_page(url):
-    http_doc = urllib3.PoolManager()
-    response = http_doc.request('GET', url)
+    response = requests.get(url)
     if response.status != 200:
         print("Erro de carregamento na página. Você está conectado?")
         return
     return response.data
 
 def post_page(url):
-    http_doc = urllib3.PoolManager()
-    response = http_doc.request('POST', url)
+    response = requests.get(url)
     if response.status != 200:
         print("Erro de carregamento na página. Você está conectado?")
         return
@@ -131,13 +138,14 @@ def get_folha_news_fulltext(url, title='', html_tag='a', target_folder='', news_
             break
         
         else:
-            p_info = p_info + os.linesep*2
-            p_info_b = bytes(p_info, encoding)
+            p_info = str(p_info + os.linesep*2)
+            p_info_b = bytes(p_info, 'utf8')#encoding)'cp1252'
             print(p_info_b)
             print('')
             print(p_info)
             print('')
             print(codecs.decode(p_info_b, encoding))
+            input('CTRL+C')
 
             info += p_info
 
@@ -199,4 +207,56 @@ def get_folha_news(url=folha, html_tag='h2', target_folder=''):
 
     return http_response_info
 
+
+def get_br_de_fato_news(url=br_de_fato):
+    http_response = requests.get(url)
+    print(http_response.text)
     
+
+def procurar_no_portal_da_transparencia(cpf):
+    option = Options()
+    option.headless = True
+    driver = webdriver.Firefox(options=option)
+
+    url = 'http://www.portaltransparencia.gov.br/busca?termo='
+    driver.get(url+cpf)
+    
+    http_static_response = driver.execute_script('return document.documentElement.outerHTML')
+    http_static_response = BeautifulSoup(http_static_response, "html.parser")
+    response = http_static_response.find('ul', {'id': 'resultados'})
+    elements = response.find_all('a')
+    for element in elements:
+        print(element.get_text())
+    driver.quit()
+
+
+def pop_up_consulta_irpf(cpf, data_nascimento):
+    driver = webdriver.Firefox()
+
+    url = 'http://servicos.receita.fazenda.gov.br/Servicos/ConsRest/Atual.app/paginas/mobile/restituicaoMobi.asp'
+
+    driver.get(url)
+
+    input_cpf = driver.find_element_by_xpath('//input[@id="cpf"]')
+    input_cpf.click()
+    input_cpf.send_keys(cpf)
+
+    input_dn = driver.find_element_by_xpath('//input[@id="data_nascimento"]')
+    input_dn.click()
+    input_dn.send_keys(data_nascimento)
+
+    input_code = driver.find_element_by_xpath('//input[@id="txtTexto_captcha_serpro_gov_br"]')
+    input_code.click()
+
+
+def send_via_whatsappweb():
+    driver = webdriver.Firefox()
+
+    url = 'https://web.whatsapp.com/'
+
+    driver.get(url)
+
+    pessoa = driver.find_element_by_xpath('//span[@title="Mari Amore"]')
+    pessoa.click()
+
+
