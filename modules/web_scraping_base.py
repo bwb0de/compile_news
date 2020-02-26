@@ -16,18 +16,22 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 
 from modules.news_pastas_de_dados import pasta_modulos
+from modules.passwinfo import uid, pwd
 
 bbc_br = 'https://www.bbc.com/portuguese'
 folha = 'https://www.folha.uol.com.br'
 br_de_fato = 'https://www.brasildefato.com.br/politica'
+correioweb_cidades = 'https://www.correiobraziliense.com.br/cidades---df/'
+correioweb_politica = 'https://www.correiobraziliense.com.br/politica/'
+
 
 
 def get_page(url):
     response = requests.get(url)
-    if response.status != 200:
+    if response.status_code != 200:
         print("Erro de carregamento na página. Você está conectado?")
         return
-    return response.data
+    return response.text
 
 def post_page(url):
     response = requests.get(url)
@@ -44,7 +48,7 @@ def parse_url(url):
 def get_page_links(url):
     http_response_info = parse_url(url)
     for link in http_response_info.find_all('a'):
-        yield link.get('href')
+        yield link#.get('href')
 
 def get_page_info(url, html_tag):
     http_response_info = parse_url(url)
@@ -208,9 +212,68 @@ def get_folha_news(url=folha, html_tag='h2', target_folder=''):
     return http_response_info
 
 
-def get_br_de_fato_news(url=br_de_fato):
-    http_response = requests.get(url)
-    print(http_response.text)
+def get_correioweb_news(target_folder=''):
+    option = Options()
+    option.headless = True
+    driver = webdriver.Firefox(options=option)
+
+    url = 'https://www.correiobraziliense.com.br/ultimas-noticias/'
+    driver.get(url)
+    
+    http_static_response = driver.execute_script('return document.documentElement.outerHTML')
+    http_static_response = BeautifulSoup(http_static_response, "html.parser")
+
+    n = itertools.count()
+
+    news_links = []
+
+    for ln in http_static_response.find_all('a'):
+        if ln.parent.find('h4'):
+            titulo = ln.get('title').strip()
+            link = ln.get('href').strip()
+            news_links.append((titulo, link))
+
+    for new in news_links:
+        with open(target_folder+'noticias_correioweb_{}.txt'.format(next(n)), 'w') as f:
+            f.write(new[0]+os.linesep)
+            f.write(new[1]+os.linesep*3)
+            new_info = parse_url(new[1])
+            for paragrafo in new_info.find_all('p'):
+                if paragrafo.get_text().strip() == 'Quem Somos':
+                    break
+                else:
+                    f.write(paragrafo.get_text()+os.linesep*2)
+
+
+    print(news_links)
+
+
+
+def get_br_de_fato_news(url=br_de_fato, target_folder=''):
+    http_response = get_page_links(url)
+
+    n = itertools.count()
+
+    news_links = []
+
+    for ln in http_response:
+        if ln.parent.find('h3'):
+            titulo = ln.parent.find('h3').get_text().strip()
+            link = ln.get('href').strip()
+            news_links.append((titulo, link))
+    
+    for new in news_links:
+        with open(target_folder+'noticias_br_de_fato_{}.txt'.format(next(n)), 'w') as f:
+            f.write(new[0]+os.linesep)
+            f.write(new[1]+os.linesep*3)
+            new_info = parse_url(new[1])
+            for paragrafo in new_info.find_all('p'):
+                if paragrafo.get_text().strip() == 'Quem Somos':
+                    break
+                else:
+                    f.write(paragrafo.get_text()+os.linesep*2)
+
+    return news_links
     
 
 def procurar_no_portal_da_transparencia(cpf):
@@ -258,5 +321,49 @@ def send_via_whatsappweb():
 
     pessoa = driver.find_element_by_xpath('//span[@title="Mari Amore"]')
     pessoa.click()
+
+
+def pop_up_novo_sae_estudo_info(mat, periodo):
+    driver = webdriver.Firefox()
+
+    url1 = 'https://servicos.unb.br/dados/login/index.html?response_type=code&client_id=95&redirect_uri=/sae/index.html'
+
+    driver.get(url1)
+
+    input_uid = driver.find_element_by_xpath('//*[@id="username"]')
+    input_uid.click()
+    input_uid.send_keys(uid)
+
+    input_pwd = driver.find_element_by_xpath('//*[@id="pass"]')
+    input_pwd.click()
+    input_pwd.send_keys(pwd)
+
+    input_submit_login = driver.find_element_by_xpath('//*[@id="enter"]')
+    input_submit_login.click()
+
+    time.sleep(5)
+
+    driver.find_element_by_xpath('/html/body/my-app/section[1]/unb-navbar/aside/div[1]/ul/li[4]/a').click()
+
+    input_periodo = driver.find_element_by_xpath('//*[@id="mat-input-1"]')
+    input_periodo.click()
+    input_periodo.clear()
+    input_periodo.send_keys(periodo)
+    
+    input_matricula = driver.find_element_by_xpath('//input[@id="mat-input-2"]')
+    input_matricula.click()
+    input_matricula.send_keys(mat)
+
+    #Clica em pesquisar
+    driver.find_element_by_xpath('/html/body/my-app/section[2]/div/app-estudo-list/estudo-list-filtro/mat-card/form/button').click()
+    time.sleep(2)
+
+    input_validacao = driver.find_element_by_xpath('/html/body/my-app/section[2]/div/app-estudo-list/mat-card/div/mat-table/mat-row/mat-cell[9]/div/button[2]')
+    input_validacao.click()
+    time.sleep(2)
+
+    aba_visualizacao = driver.find_element_by_xpath('/html/body/my-app/section[2]/div/validacao-detail/div/estudo-cabecalho/mat-card/mat-card-actions/estudo-dialog-button/button')
+    aba_visualizacao.click()
+
 
 

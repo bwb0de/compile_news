@@ -34,6 +34,8 @@ Usage:
     get-info irpf <cpf> <dn>
     get-info wa
     get-info bdfato
+    get-info correioweb
+    get-info sae <matricula> <periodo>
 
 
 Options:
@@ -45,7 +47,7 @@ import os
 
 from docopt import docopt
 
-from modules.web_scraping_base import get_bbc_news, bbc_br, get_folha_news, procurar_no_portal_da_transparencia, pop_up_consulta_irpf, send_via_whatsappweb, get_br_de_fato_news
+from modules.web_scraping_base import get_bbc_news, bbc_br, get_folha_news, procurar_no_portal_da_transparencia, pop_up_consulta_irpf, send_via_whatsappweb, get_br_de_fato_news, pop_up_novo_sae_estudo_info, get_correioweb_news
 from modules.news_pastas_de_dados import pasta_dados
 
 args = docopt(__doc__)
@@ -74,7 +76,20 @@ def main():
         send_via_whatsappweb()
 
     elif args['bdfato']:
-        get_br_de_fato_news()
+        newid = os.fork()
+        if newid == 0:
+            print('Buscando informações em Brasil de Fato...')
+            get_br_de_fato_news(target_folder=pasta_dados)
+
+    elif args['correioweb']:
+        newid = os.fork()
+        if newid == 0:
+            print('Buscando informações em Correio Web...')
+            get_correioweb_news(target_folder=pasta_dados)
+
+
+    elif args['sae']:
+        pop_up_novo_sae_estudo_info(args['<matricula>'], args['<periodo>'])
 
 
 if __name__ == '__main__':
