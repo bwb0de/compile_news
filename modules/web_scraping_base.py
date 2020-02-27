@@ -82,7 +82,7 @@ def get_bbc_news(url=bbc_br, html_tag='a', target_folder=''):
 
             try:
                 fulltext_data = get_bbc_news_fulltext(link)
-            except urllib3.exceptions.MaxRetryError:
+            except requests.exceptions.ConnectionError:
                 ignore_text = True
 
             with open(target_folder+'noticias_bbc_{}.txt'.format(next(n)), 'w') as f:
@@ -91,7 +91,7 @@ def get_bbc_news(url=bbc_br, html_tag='a', target_folder=''):
                 if not ignore_text:
                     f.write(fulltext_data)
             
-            time.sleep(15)
+            time.sleep(0.2)
 
 
 def get_folha_news_fulltext(url, title='', html_tag='a', target_folder='', news_num=0):
@@ -104,14 +104,28 @@ def get_folha_news_fulltext(url, title='', html_tag='a', target_folder='', news_
         title_info = t.get_text().strip()
 
     output_info = []
-    output_info.append(bytes(title_info+os.linesep*2, encoding))
+    output_info.append(title_info.encode('raw_unicode_escape'))
 
     info = ''
 
     for paragrafo in http_response_info.find_all('p'):
 
         p_info = paragrafo.get_text().strip()
+        p_info = p_info.encode('raw_unicode_escape')
 
+        output_info.append(p_info)
+
+        """
+        try:
+            p_info = p_info.encode('raw_unicode_escape')
+            p_info = codecs.decode(p_info, 'utf8')
+        except UnicodeDecodeError:
+            p_info = codecs.decode(p_info, 'latin1')
+            p_info = paragrafo.get_text().strip().encode('raw_unicode_escape')
+            p_info = codecs.decode(p_info, 'utf8')
+        """
+        '''
+        print(p_info)
         re_time_tag = re.search(r'\d\d\.\w\w\w\.\d\d\d\d\s..\s', p_info)
 
         if p_info.find('Assinantes podem liberar 5 acessos por dia para cont') != -1:
@@ -142,17 +156,10 @@ def get_folha_news_fulltext(url, title='', html_tag='a', target_folder='', news_
             break
         
         else:
-            p_info = str(p_info + os.linesep*2)
-            p_info_b = bytes(p_info, 'utf8')#encoding)'cp1252'
-            print(p_info_b)
-            print('')
-            print(p_info)
-            print('')
-            print(codecs.decode(p_info_b, encoding))
-            input('CTRL+C')
-
             info += p_info
-
+            #output_info.append(p_info)
+        '''
+    """
     while True:
         if info.find('\n\n\n') != -1: 
             info = info.replace('\n\n\n', '\n\n')
@@ -160,22 +167,22 @@ def get_folha_news_fulltext(url, title='', html_tag='a', target_folder='', news_
             info = info.replace('Assinantes podem liberar 5 acessos por dia para conteúdos da Folha','')
             info = info.replace('Assinantes podem liberar 5 acessos por dia para conteúdos da Folha','')
         else: break
+    """
+    #info_b = bytes(info, encoding)
+    #output_info.append(info_b)
 
-    info_b = bytes(info, encoding)
-    
-    output_info.append(info_b)
+    print(info)
+
     
     with open(target_folder+'noticias_folha_{}.txt'.format(news_num), 'wb') as f:
         for line in output_info:
             f.write(line)
     
-
-    input('Sair...')
-
+    """
     with open(target_folder+'noticias_folha_{}.txt'.format(news_num), 'w', encoding=encoding) as f:
         f.write(title_info+os.linesep*2)
         f.write(info)
-
+    """
     '''
     o = []
     with open(target_folder+'noticias_folha_{}.txt'.format(news_num), 'rb') as f:
