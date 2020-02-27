@@ -23,6 +23,8 @@ folha = 'https://www.folha.uol.com.br'
 br_de_fato = 'https://www.brasildefato.com.br/politica'
 correioweb_cidades = 'https://www.correiobraziliense.com.br/cidades---df/'
 correioweb_politica = 'https://www.correiobraziliense.com.br/politica/'
+unb_noticias = 'http://www.noticias.unb.br/'
+unb_ciencias = 'http://www.unbciencia.unb.br/ultimas'
 
 def convert_to_readaloud():
     os.system('for FILE in $(ls); do echo "$FILE"; iconv -c -f utf-8 -t iso-8859-15 "$FILE" > "nv-$FILE"; done')
@@ -52,12 +54,14 @@ def get_js_page(url):
 
 
 
-def parse_url(url, static_url=True):
+def parse_url(url, static_url=True, html_class=False):
     if static_url:
         http_doc = get_page(url)
     else:
         http_doc = get_js_page(url)
+        
     http_response_info = BeautifulSoup(http_doc, 'html.parser')
+
     return http_response_info
 
 
@@ -69,8 +73,45 @@ def get_page_links(url, static_url=True):
 
 def get_page_info(url, html_tag):
     http_response_info = parse_url(url)
-    for item in http_response_info.find_all(html_tag):
+    
+    selected_elements = http_response_info.find_all(html_tag)
+
+    for item in selected_elements:
         yield item
+
+
+def get_unb_news(target_folder='', encoding='utf8'):
+
+    http_response_unb_noticias = get_page_info(unb_noticias, 'h2')
+    http_response_unb_ciencia = get_page_info(unb_ciencias, 'h2')
+    
+    news_link = []
+    
+    for title in http_response_unb_noticias:
+        title_info = title.get_text().strip()
+        link = unb_noticias+title.find('a').get('href')[1:]
+        news_link.append((title_info, link))
+    
+    for title in http_response_unb_ciencia:
+        if title.find('a'): #.get('href'):
+            title_info = title.get_text().strip()
+            link = unb_ciencias+title.find('a').get('href')[1:]
+            news_link.append((title_info, link))
+    
+    for new in news_link:
+        get_unb_news_fulltext(new[0], new[1])
+
+
+def get_unb_news_fulltext(title, url):
+    
+    http_response = get_page_info(url, 'p')
+    
+    for i in http_response:
+        print(i.get_text().strip())
+        print()
+    input('PAUSAR....')
+
+
 
 
 def get_bbc_news(url=bbc_br, html_tag='a', target_folder='', encoding='utf8'):
@@ -288,6 +329,7 @@ def grab_and_decode(
             link = ln.get('href').strip()
             news_links.append((titulo, link))
 
+    print(news_links)
     
     for new in news_links:
         with open(target_folder+'{file_label}_{n}.txt'.format(file_label=file_label, n=next(n)), 'wb') as f:
