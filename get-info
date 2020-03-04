@@ -29,6 +29,7 @@ Programa para coleta de notícias do site BBC Brasil
 
 Usage:
     get-info bbc
+    get-info unb
     get-info folha
     get-info transparencia <cpf>
     get-info irpf <cpf> <dn>
@@ -47,7 +48,7 @@ import os
 
 from docopt import docopt
 
-from modules.web_scraping_base import get_bbc_news, bbc_br, get_folha_news, procurar_no_portal_da_transparencia, pop_up_consulta_irpf, send_via_whatsappweb, get_br_de_fato_news, pop_up_novo_sae_estudo_info, get_correioweb_news
+from modules.web_scraping_base import get_bbc_news, get_unb_news, get_bbc2_news, bbc_br, get_folha_news, procurar_no_portal_da_transparencia, pop_up_consulta_irpf, send_via_whatsappweb, get_br_de_fato_news, pop_up_novo_sae_estudo_info, get_correioweb_news
 from modules.news_pastas_de_dados import pasta_dados
 
 args = docopt(__doc__)
@@ -62,7 +63,10 @@ def main():
         if newid == 0:
             print('Buscando informações em BBC Brasil...')
             get_bbc_news(target_folder=pasta_dados)
-    
+
+    elif args['unb']:
+        get_unb_news(target_folder=pasta_dados)
+
     elif args['folha']:
         get_folha_news(target_folder=pasta_dados)
 
