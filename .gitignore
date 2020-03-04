@@ -3,5 +3,6 @@ chromedriver
 geckodriver
 *.log
 passwinfo.py
-*.pyc
-__py*
+*pyc
+__pycache__
+.pytest_cache
